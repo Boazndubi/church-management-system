@@ -1,1 +1,221 @@
- 
+import { useState, useEffect } from 'react'
+import './App.css'
+
+export default function App() {
+  const [isLoading, setIsLoading] = useState(false)
+  const [apiStatus, setApiStatus] = useState('unknown')
+
+  useEffect(() => {
+    // Check backend API health on mount
+    checkApiHealth()
+  }, [])
+
+  const checkApiHealth = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api'}/health`)
+      
+      if (response.ok) {
+        setApiStatus('connected')
+      } else {
+        setApiStatus('error')
+      }
+    } catch (error) {
+      setApiStatus('disconnected')
+      console.error('API health check failed:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                JA
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Church Management System
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Global. Connected. Kingdom Driven.
+                </p>
+              </div>
+            </div>
+            
+            {/* API Status Badge */}
+            <div className="flex items-center space-x-2">
+              <div className={`w-3 h-3 rounded-full ${
+                apiStatus === 'connected' ? 'bg-green-500' :
+                apiStatus === 'disconnected' ? 'bg-red-500' :
+                'bg-yellow-500'
+              }`}></div>
+              <span className="text-sm font-medium text-gray-700">
+                {apiStatus === 'connected' ? 'API Connected' :
+                 apiStatus === 'disconnected' ? 'API Disconnected' :
+                 'Checking API...'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Welcome Card */}
+          <div className="bg-white rounded-lg shadow-lg p-8 border-l-4 border-indigo-600">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              Welcome to JOSKA ALTAR
+            </h2>
+            <p className="text-gray-700 mb-6">
+              This is the Church Ministry Management System - a comprehensive solution for managing church operations, members, services, and contributions.
+            </p>
+            <div className="space-y-3">
+              <div className="flex items-start space-x-3">
+                <span className="text-green-600 font-bold text-xl">✓</span>
+                <p className="text-gray-700"><strong>Member Management:</strong> Track and manage church members efficiently</p>
+              </div>
+              <div className="flex items-start space-x-3">
+                <span className="text-green-600 font-bold text-xl">✓</span>
+                <p className="text-gray-700"><strong>Attendance:</strong> Record and monitor service attendance</p>
+              </div>
+              <div className="flex items-start space-x-3">
+                <span className="text-green-600 font-bold text-xl">✓</span>
+                <p className="text-gray-700"><strong>Contributions:</strong> Track tithes, offerings, and donations</p>
+              </div>
+              <div className="flex items-start space-x-3">
+                <span className="text-green-600 font-bold text-xl">✓</span>
+                <p className="text-gray-700"><strong>Departments:</strong> Manage various church departments</p>
+              </div>
+            </div>
+          </div>
+
+          {/* System Status Card */}
+          <div className="bg-white rounded-lg shadow-lg p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              System Status
+            </h2>
+            
+            <div className="space-y-4">
+              {/* Frontend Status */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-700">Frontend</span>
+                  <span className="text-green-600 font-bold">✓ Running</span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">React + Vite</p>
+              </div>
+
+              {/* Backend Status */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-700">Backend API</span>
+                  <span className={`font-bold ${
+                    apiStatus === 'connected' ? 'text-green-600' :
+                    apiStatus === 'disconnected' ? 'text-red-600' :
+                    'text-yellow-600'
+                  }`}>
+                    {apiStatus === 'connected' ? '✓ Running' :
+                     apiStatus === 'disconnected' ? '✗ Offline' :
+                     '⋯ Checking...'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">Node.js + Express</p>
+                <button
+                  onClick={checkApiHealth}
+                  disabled={isLoading}
+                  className="mt-2 text-sm text-indigo-600 hover:text-indigo-700 font-medium disabled:opacity-50"
+                >
+                  {isLoading ? 'Checking...' : 'Retry Connection'}
+                </button>
+              </div>
+
+              {/* Database Status */}
+              <div className="border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="font-semibold text-gray-700">Database</span>
+                  <span className="text-gray-600 font-bold">○ Not Configured</span>
+                </div>
+                <p className="text-sm text-gray-600 mt-1">PostgreSQL</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Features Grid */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[
+            { icon: '👥', title: 'Member Management', desc: 'Manage church members and families' },
+            { icon: '📅', title: 'Service Planning', desc: 'Schedule and manage church services' },
+            { icon: '💰', title: 'Contribution Tracking', desc: 'Track tithes and offerings' },
+            { icon: '📊', title: 'Reports & Analytics', desc: 'Comprehensive reporting tools' },
+            { icon: '🔐', title: 'Secure Access', desc: 'Role-based access control' },
+            { icon: '📱', title: 'Mobile Ready', desc: 'Responsive design for all devices' },
+          ].map((feature, idx) => (
+            <div key={idx} className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-shadow">
+              <div className="text-4xl mb-3">{feature.icon}</div>
+              <h3 className="font-bold text-gray-900 mb-2">{feature.title}</h3>
+              <p className="text-sm text-gray-600">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Tech Stack */}
+        <div className="mt-12 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-lg shadow-lg p-8 text-white">
+          <h2 className="text-2xl font-bold mb-4">Technology Stack</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <p className="font-semibold">Frontend</p>
+              <ul className="text-sm mt-2 space-y-1">
+                <li>• React 18</li>
+                <li>• Vite</li>
+                <li>• Tailwind CSS</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold">Backend</p>
+              <ul className="text-sm mt-2 space-y-1">
+                <li>• Node.js</li>
+                <li>• Express.js</li>
+                <li>• Prisma ORM</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold">Database</p>
+              <ul className="text-sm mt-2 space-y-1">
+                <li>• PostgreSQL</li>
+                <li>• Docker</li>
+              </ul>
+            </div>
+            <div>
+              <p className="font-semibold">Integrations</p>
+              <ul className="text-sm mt-2 space-y-1">
+                <li>• M-Pesa API</li>
+                <li>• WhatsApp</li>
+                <li>• Email Service</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-8 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-gray-400">
+            &copy; 2024 Church Ministry Management System - JOSKA ALTAR. All rights reserved.
+          </p>
+          <p className="text-gray-500 text-sm mt-2">
+            Global. Connected. Kingdom Driven.
+          </p>
+        </div>
+      </footer>
+    </div>
+  )
+}

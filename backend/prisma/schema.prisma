@@ -1,0 +1,288 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ARCHBISHOP
+  BISHOP
+  OVERSEER
+  SENIOR_PASTOR
+  PASTOR
+  DEPARTMENT_PASTOR
+  ATTENDANCE_MANAGER
+  MEMBER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum MaritalStatus {
+  SINGLE
+  MARRIED
+  DIVORCED
+  WIDOWED
+}
+
+enum ServiceType {
+  SUNDAY_SERVICE
+  MIDWEEK_SERVICE
+  SPECIAL_EVENT
+  PRAYER_MEETING
+  YOUTH_MEETING
+}
+
+enum ContributionType {
+  TITHE
+  OFFERING
+  BUILDING_FUND
+  MISSION
+  OTHER
+}
+
+enum PaymentMethod {
+  CASH
+  MPESA
+  BANK_TRANSFER
+  CHEQUE
+  ONLINE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+model User {
+  id            String     @id @default(cuid())
+  email         String     @unique
+  password      String
+  firstName     String
+  lastName      String
+  phoneNumber   String?    @unique
+  profileImage  String?
+  role          UserRole   @default(MEMBER)
+  isActive      Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  member        Member?
+  department    Department? @relation("DepartmentPastor")
+  supervisorOf  Department? @relation("DepartmentOverseer")
+  messages      Message[]
+  attendance    Attendance[]
+  contributions Contribution[]
+
+  @@index([email])
+  @@index([role])
+}
+
+model Member {
+  id            String     @id @default(cuid())
+  userId        String     @unique
+  dateOfBirth   DateTime?
+  gender        Gender?
+  maritalStatus MaritalStatus?
+  address       String?
+  city          String?
+  state         String?
+  zipCode       String?
+  occupancy     String?
+  joinDate      DateTime   @default(now())
+  memberStatus  String     @default("active")
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  departmentId  String?
+  department    Department? @relation(fields: [departmentId], references: [id])
+  family        Family?
+  attendance    Attendance[]
+  contributions Contribution[]
+
+  @@index([userId])
+  @@index([departmentId])
+  @@index([memberStatus])
+}
+
+model Family {
+  id            String     @id @default(cuid())
+  memberId      String     @unique
+  familyName    String
+  headOfFamily  String
+  totalMembers  Int
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  member        Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@index([memberId])
+}
+
+model Department {
+  id            String     @id @default(cuid())
+  name          String     @unique
+  description   String?
+  pastorId      String?    @unique
+  overseerId    String?    @unique
+  numberOfMembers Int     @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  pastor        User?      @relation("DepartmentPastor", fields: [pastorId], references: [id])
+  overseer      User?      @relation("DepartmentOverseer", fields: [overseerId], references: [id])
+  members       Member[]
+  events        Event[]
+
+  @@index([pastorId])
+  @@index([overseerId])
+}
+
+model Service {
+  id            String     @id @default(cuid())
+  title         String
+  serviceType   ServiceType @default(SUNDAY_SERVICE)
+  description   String?
+  date          DateTime
+  startTime     DateTime
+  endTime       DateTime
+  venue         String
+  hostId        String
+  totalMembers  Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  host          User       @relation(fields: [hostId], references: [id])
+  attendance    Attendance[]
+
+  @@index([hostId])
+  @@index([date])
+  @@index([serviceType])
+}
+
+model Attendance {
+  id            String     @id @default(cuid())
+  memberId      String
+  serviceId     String
+  status        AttendanceStatus @default(PRESENT)
+  timestamp     DateTime   @default(now())
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  member        Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  service       Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [memberId], references: [id])
+
+  @@unique([memberId, serviceId])
+  @@index([memberId])
+  @@index([serviceId])
+  @@index([status])
+  @@index([timestamp])
+}
+
+model Contribution {
+  id            String     @id @default(cuid())
+  memberId      String
+  amount        Float
+  type          ContributionType
+  paymentMethod PaymentMethod
+  reference     String?    @unique
+  status        String     @default("pending")
+  mpesaTransId  String?    @unique
+  bankTransId   String?    @unique
+  notes         String?
+  contributedAt DateTime   @default(now())
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  member        Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  user          User       @relation(fields: [memberId], references: [id])
+
+  @@index([memberId])
+  @@index([type])
+  @@index([status])
+  @@index([paymentMethod])
+  @@index([contributedAt])
+}
+
+model Event {
+  id            String     @id @default(cuid())
+  title         String
+  description   String?
+  departmentId  String?
+  startDate     DateTime
+  endDate       DateTime?
+  location      String?
+  notes         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  department    Department? @relation(fields: [departmentId], references: [id])
+
+  @@index([departmentId])
+  @@index([startDate])
+}
+
+model Message {
+  id            String     @id @default(cuid())
+  senderId      String
+  content       String
+  messageType   String     @default("notification")
+  isRead        Boolean    @default(false)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  // Relations
+  sender        User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([isRead])
+  @@index([createdAt])
+}
+
+model Log {
+  id            String     @id @default(cuid())
+  action        String
+  description   String?
+  entity        String
+  entityId      String
+  userId        String?
+  ipAddress     String?
+  userAgent     String?
+  createdAt     DateTime   @default(now())
+
+  @@index([userId])
+  @@index([entity])
+  @@index([createdAt])
+}
