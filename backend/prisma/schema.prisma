@@ -89,11 +89,10 @@ model User {
 
   // Relations
   member        Member?
-  department    Department? @relation("DepartmentPastor")
-  supervisorOf  Department? @relation("DepartmentOverseer")
+  departmentAsPastor    Department? @relation("DepartmentPastor")
+  departmentAsOverseer  Department? @relation("DepartmentOverseer")
+  hostedServices        Service[]   @relation("ServiceHost")
   messages      Message[]
-  attendance    Attendance[]
-  contributions Contribution[]
 
   @@index([email])
   @@index([role])
@@ -121,7 +120,7 @@ model Member {
   departmentId  String?
   department    Department? @relation(fields: [departmentId], references: [id])
   family        Family?
-  attendance    Attendance[]
+  attendances   Attendance[]
   contributions Contribution[]
 
   @@index([userId])
@@ -179,8 +178,8 @@ model Service {
   updatedAt     DateTime   @updatedAt
 
   // Relations
-  host          User       @relation(fields: [hostId], references: [id])
-  attendance    Attendance[]
+  host          User       @relation("ServiceHost", fields: [hostId], references: [id], onDelete: Cascade)
+  attendances   Attendance[]
 
   @@index([hostId])
   @@index([date])
@@ -200,7 +199,6 @@ model Attendance {
   // Relations
   member        Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
   service       Service    @relation(fields: [serviceId], references: [id], onDelete: Cascade)
-  user          User       @relation(fields: [memberId], references: [id])
 
   @@unique([memberId, serviceId])
   @@index([memberId])
@@ -226,7 +224,6 @@ model Contribution {
 
   // Relations
   member        Member     @relation(fields: [memberId], references: [id], onDelete: Cascade)
-  user          User       @relation(fields: [memberId], references: [id])
 
   @@index([memberId])
   @@index([type])

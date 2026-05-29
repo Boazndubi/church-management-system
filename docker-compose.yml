@@ -1,74 +1,46 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: church-db
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
+      POSTGRES_USER: church_admin
+      POSTGRES_PASSWORD: church_pass_2024
       POSTGRES_DB: church_management_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    networks:
-      - church-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U church_admin -d church_management_db"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  # Backend API Service
   backend:
     build:
       context: ./backend
       dockerfile: ../Dockerfile.backend
-    container_name: church-api
+    container_name: church-backend
+    restart: unless-stopped
     environment:
-      NODE_ENV: development
-      PORT: 5000
-      DATABASE_URL: postgresql://postgres:password123@postgres:5432/church_management_db
-      JWT_SECRET: dev_super_secret_jwt_key_12345
-      CORS_ORIGIN: http://localhost:5173
+      DATABASE_URL: postgresql://church_admin:church_pass_2024@postgres:5432/church_management_db
     ports:
       - "5000:5000"
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
-    networks:
-      - church-network
-    command: npm run dev
 
-  # Frontend Web Service
   frontend:
     build:
-      context: ./frontend
-      dockerfile: ../Dockerfile.frontend
-    container_name: church-web
-    environment:
-      VITE_API_BASE_URL: http://localhost:5000/api
-      VITE_ENV: development
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: church-frontend
+    restart: unless-stopped
     ports:
       - "5173:5173"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
     depends_on:
       - backend
-    networks:
-      - church-network
-    command: npm run dev
 
 volumes:
   postgres_data:
-    driver: local
-
-networks:
-  church-network:
-    driver: bridge  
