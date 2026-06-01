@@ -87,6 +87,25 @@ app.get('/api', (req, res) => {
   });
 });
 
+import authRoutes from './src/routes/auth.routes.js';
+import memberRoutes from './src/routes/members.routes.js';
+import serviceRoutes from './src/routes/services.routes.js';
+import attendanceRoutes from './src/routes/attendance.routes.js';
+import departmentRoutes from './src/routes/departments.routes.js';
+import contributionRoutes from './src/routes/contributions.routes.js';
+import eventRoutes from './src/routes/events.routes.js';
+import messageRoutes from './src/routes/messages.routes.js';
+
+app.use('/api/auth', authRoutes);
+app.use('/api/members', memberRoutes);
+app.use('/api/services', serviceRoutes);
+app.use('/api/attendance', attendanceRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/contributions', contributionRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/messages', messageRoutes);
+app.use('/api/messages', messageRoutes);
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({
@@ -95,6 +114,7 @@ app.use((req, res) => {
     timestamp: new Date().toISOString()
   });
 });
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
