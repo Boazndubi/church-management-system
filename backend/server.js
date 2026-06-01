@@ -1,4 +1,4 @@
-  import express from 'express';
+import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -6,6 +6,14 @@ import morgan from 'morgan';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import authRoutes from './src/routes/auth.routes.js';
+import memberRoutes from './src/routes/members.routes.js';
+import serviceRoutes from './src/routes/services.routes.js';
+import attendanceRoutes from './src/routes/attendance.routes.js';
+import departmentRoutes from './src/routes/departments.routes.js';
+import contributionRoutes from './src/routes/contributions.routes.js';
+import eventRoutes from './src/routes/events.routes.js';
+import messageRoutes from './src/routes/messages.routes.js';
 
 // Load environment variables
 dotenv.config();
@@ -33,34 +41,29 @@ if (!fs.existsSync(uploadsDir)) {
 // MIDDLEWARE
 // ============================================================================
 
-// Security middleware
 app.use(helmet());
 
-// CORS middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Body parser middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Logging middleware
 const logStream = fs.createWriteStream(
   path.join(logsDir, `app-${new Date().toISOString().split('T')[0]}.log`),
   { flags: 'a' }
 );
 app.use(morgan('combined', { stream: logStream }));
-app.use(morgan('dev')); // Console logging in development
+app.use(morgan('dev'));
 
 // ============================================================================
 // ROUTES
 // ============================================================================
 
-// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
@@ -70,7 +73,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Placeholder routes (we'll create these in next steps)
 app.get('/api', (req, res) => {
   res.status(200).json({
     message: 'Church Management System API',
@@ -82,19 +84,12 @@ app.get('/api', (req, res) => {
       services: '/api/services',
       attendance: '/api/attendance',
       contributions: '/api/contributions',
-      departments: '/api/departments'
+      departments: '/api/departments',
+      events: '/api/events',
+      messages: '/api/messages'
     }
   });
 });
-
-import authRoutes from './src/routes/auth.routes.js';
-import memberRoutes from './src/routes/members.routes.js';
-import serviceRoutes from './src/routes/services.routes.js';
-import attendanceRoutes from './src/routes/attendance.routes.js';
-import departmentRoutes from './src/routes/departments.routes.js';
-import contributionRoutes from './src/routes/contributions.routes.js';
-import eventRoutes from './src/routes/events.routes.js';
-import messageRoutes from './src/routes/messages.routes.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
@@ -103,7 +98,6 @@ app.use('/api/attendance', attendanceRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/contributions', contributionRoutes);
 app.use('/api/events', eventRoutes);
-app.use('/api/messages', messageRoutes);
 app.use('/api/messages', messageRoutes);
 
 // 404 handler
@@ -115,14 +109,11 @@ app.use((req, res) => {
   });
 });
 
-
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Error:', err);
-
   const status = err.status || err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
-
   res.status(status).json({
     status: 'error',
     message,
@@ -141,38 +132,27 @@ const APP_NAME = process.env.APP_NAME || 'Church Management System';
 const server = app.listen(PORT, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════════╗
-║          ${APP_NAME.padEnd(55)} ║
-║          Environment: ${NODE_ENV.padEnd(45)} ║
-║          Server running on: http://localhost:${String(PORT).padEnd(40)} ║
+║          ${APP_NAME.padEnd(55)}║
+║          Environment: ${NODE_ENV.padEnd(45)}║
+║          Server running on: http://localhost:${String(PORT).padEnd(40)}║
 ║          Created by: JOSKA ALTAR                           ║
 ╚════════════════════════════════════════════════════════════╝
   `);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
+  server.close(() => process.exit(0));
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed');
-    process.exit(0);
-  });
+  server.close(() => process.exit(0));
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (err) => {
   console.error('Uncaught Exception:', err);
   process.exit(1);
 });
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
   process.exit(1);
